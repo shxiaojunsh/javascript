@@ -36,10 +36,10 @@ class MyPromise {
 
         if (this.state === PENDING || this.state === FULFILLED) {
             this.next = new MyPromise((resolve, reject) => {
-                this.nextThen = () => this.tryTerminatePromise(onFulfilled, resolve, reject);
+                this.nextThen = (data) => this.tryTerminatePromise(onFulfilled, resolve, reject, data);
                 if (onRejected) {
                     onRejected = typeof onRejected === 'function' ? onRejected : value => value;
-                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, error);
+                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
                 }
             });
 
@@ -47,7 +47,7 @@ class MyPromise {
             if (onRejected) {
                 onRejected = typeof onRejected === 'function' ? onRejected : value => value;
                 this.next = new MyPromise((resolve, reject) => {
-                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, error);
+                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
                 });
             } else {
                 this.next = new MyPromise((resolve, reject) => {});
@@ -63,7 +63,7 @@ class MyPromise {
 
         if (this.state === PENDING || this.state === REJECTED) {
             this.next = new MyPromise((resolve, reject) => {
-                this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, error);
+                this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
             });
         } else if (this.state === FULFILLED) {
             this.next = new MyPromise((resolve, reject) => {});
@@ -128,10 +128,10 @@ class MyPromise {
         }
     }
 
-    tryTerminatePromise(onCallback, resolve, reject, error) {
+    tryTerminatePromise(onCallback, resolve, reject, data, error) {
         try {
             this.trace('tttp: try to terminate promise');
-            const ret = onCallback(error || this.value);
+            const ret = onCallback(error || data);
             if (ret instanceof MyPromise) {
                 this.trace('tttp, callback returned a MyPromise');
                 ret.then(resolve).catch(reject);
