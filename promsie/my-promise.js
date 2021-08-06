@@ -4,7 +4,7 @@ const FULFILLED = "fulfilled";
 const REJECTED = "rejected";
 
 class MyPromise {
-    constructor(exeFunc, traceEnabled = false) {
+    constructor(executor, traceEnabled = false) {
         this.id = Math.random() * 10000;
         this.traceEnabled = traceEnabled || process.env.TRACE_ENABLED;
 
@@ -12,15 +12,15 @@ class MyPromise {
         this.value = undefined;
 
         this.next = undefined;
-        this.nextThen = undefined;
-        this.nextCatch = undefined;
+        this.nextResolvedCallback = undefined;
+        this.nextRejectedCallback = undefined;
 
         this.onResolve = this.onResolve.bind(this);
         this.onReject = this.onReject.bind(this);
 
         this.trace('constructed');
 
-        exeFunc(this.onResolve, this.onReject);
+        executor(this.onResolve, this.onReject);
     }
 
     trace(arg, ...value) {
@@ -36,10 +36,10 @@ class MyPromise {
 
         if (this.state === PENDING || this.state === FULFILLED) {
             this.next = new MyPromise((resolve, reject) => {
-                this.nextThen = (data) => this.tryTerminatePromise(onFulfilled, resolve, reject, data);
+                this.nextResolvedCallback = (data) => this.tryTerminatePromise(onFulfilled, resolve, reject, data);
                 if (onRejected) {
                     onRejected = typeof onRejected === 'function' ? onRejected : value => value;
-                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
+                    this.nextRejectedCallback = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
                 }
             });
 
@@ -47,7 +47,7 @@ class MyPromise {
             if (onRejected) {
                 onRejected = typeof onRejected === 'function' ? onRejected : value => value;
                 this.next = new MyPromise((resolve, reject) => {
-                    this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
+                    this.nextRejectedCallback = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
                 });
             } else {
                 this.next = new MyPromise((resolve, reject) => {});
@@ -63,7 +63,7 @@ class MyPromise {
 
         if (this.state === PENDING || this.state === REJECTED) {
             this.next = new MyPromise((resolve, reject) => {
-                this.nextCatch = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
+                this.nextRejectedCallback = (error) => this.tryTerminatePromise(onRejected, resolve, reject, '', error);
             });
         } else if (this.state === FULFILLED) {
             this.next = new MyPromise((resolve, reject) => {});
@@ -79,24 +79,24 @@ class MyPromise {
             this.state = FULFILLED;
             this.value = value;
             process.nextTick(() => {
-                const p = this.findNextThen(this);
+                const p = this.findNextResolvedCallback(this);
                 if (p) {
-                    this.trace(`onResolve, involve next(${p.id}) then`);
-                    p.nextThen(this.value);
+                    this.trace(`onResolve, involve next(${p.id}) resolved callback`);
+                    p.nextResolvedCallback(this.value);
                 } else {
-                    this.trace('onResolve, no next then found');
+                    this.trace('onResolve, no next resolved callback found');
                 }
             });
         }
     }
 
-    findNextThen(promise) {
+    findNextResolvedCallback(promise) {
         if (!promise) {
             return undefined;
-        } else if (promise.nextThen) {
+        } else if (promise.nextResolvedCallback) {
             return promise;
         } else {
-            return this.findNextThen(promise.next);
+            return this.findNextResolvedCallback(promise.next);
         }
     }
 
@@ -106,10 +106,10 @@ class MyPromise {
             this.state = REJECTED;
             this.value = error;
             process.nextTick(() => {
-                const p = this.findNextCatch(this);
+                const p = this.findNextRejectedCallback(this);
                 if (p) {
-                    this.trace(`onReject, involve next(${p.id}) catch`);
-                    p.nextCatch(error);
+                    this.trace(`onReject, involve next(${p.id}) rejected callback`);
+                    p.nextRejectedCallback(error);
                 } else {
                     this.trace(`onReject, unHandledRejectedPromise`, error);
                     throw new Error('unHandledRejectedPromise' + error);
@@ -118,13 +118,13 @@ class MyPromise {
         }
     }
 
-    findNextCatch(promise) {
+    findNextRejectedCallback(promise) {
         if (!promise) {
             return undefined;
-        } else if (promise.nextCatch) {
+        } else if (promise.nextRejectedCallback) {
             return promise;
         } else {
-            return this.findNextCatch(promise.next);
+            return this.findNextRejectedCallback(promise.next);
         }
     }
 

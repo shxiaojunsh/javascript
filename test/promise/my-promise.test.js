@@ -207,6 +207,23 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
             involveCount = 0;
         });
 
+        it('.then(okHandler, errorHandler)', done => {
+            new PromiseClass((resolve, reject) => {
+                reject(errorInfo);
+            })
+            .then(data => {
+                assert.fail('unexpected here');
+            }, error => {
+                involveCount++;
+                assert.equal(error.message, errorMsg);
+            });
+
+            setTimeout(() => {
+                assert.equal(involveCount, 1);
+                done();
+            }, 10);
+        });
+
         it('.then.catch', done => {
             new PromiseClass((resolve, reject) => {
                 reject(errorInfo);
@@ -515,6 +532,25 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
 
         beforeEach(() => {
             involveCount = 0;
+        });
+
+        it('.then(okHandler, errorHandler)', done => {
+            new PromiseClass((resolve, reject) => {
+                setTimeout(() => {
+                    reject(errorInfo);
+                }, 20);
+            })
+            .then(() => {
+                assert.fail('unexpected here');
+            }, error => {
+                involveCount++;
+                assert.equal(error.message, errorMsg);
+            });
+
+            setTimeout(() => {
+                assert.equal(involveCount, 1);
+                done();
+            }, 30);
         });
 
         it('.then.catch', done => {
