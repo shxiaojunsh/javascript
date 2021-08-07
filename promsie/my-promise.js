@@ -82,7 +82,7 @@ class MyPromise {
                 const p = this.findNextResolvedCallback(this);
                 if (p) {
                     this.trace(`onResolve, involve next(${p.id}) resolved callback`);
-                    p.nextResolvedCallback(this.value);
+                    p.nextResolvedCallback(value);
                 } else {
                     this.trace('onResolve, no next resolved callback found');
                 }
@@ -132,7 +132,7 @@ class MyPromise {
         try {
             this.trace('tttp: try to terminate promise');
             const ret = onCallback(error || data);
-            if (ret instanceof MyPromise) {
+            if (ret !== undefined && ret !== null & ret instanceof MyPromise) {
                 this.trace('tttp, callback returned a MyPromise');
                 ret.then(resolve).catch(reject);
             } else {

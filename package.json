@@ -4,6 +4,6 @@
     "mocha": "^9.0.3"
   },
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha ./test/**/*.js"
+    "test": "node node_modules/mocha/bin/mocha ./test/**/*.test.js"
   }
 }

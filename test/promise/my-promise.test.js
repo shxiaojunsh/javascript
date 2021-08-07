@@ -1,6 +1,8 @@
 const assert = require('assert');
 const PromiseClass = require('../../promsie/my-promise');
 
+//process.env.TRACE_ENABLED = true;
+
 describe(`${PromiseClass.name} Chain Tests`, () => {
 
     describe(`${PromiseClass.name} Body Sync Resolve Tests`, () => {
@@ -114,7 +116,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
                 assert.equal(data.name, 'xiaoming');
                 assert.equal(data.age, 18);
                 involveCount++;
-                throw new Error('mocked error 1');
+                return new PromiseClass((resolve, reject) => reject({message: 'mocked error 1'}));
             })
             .then(() => {
                 assert.fail('unexpected here');
@@ -167,7 +169,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
                 assert.equal(data.name, 'xiaoming');
                 assert.equal(data.age, 18);
                 involveCount++;
-                return data;
+                return new PromiseClass((resolve, reject) => resolve(data));
             })
             .then(data => {
                 assert.equal(data.name, 'xiaoming');
@@ -437,7 +439,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
                 assert.equal(data.name, 'xiaoming');
                 assert.equal(data.age, 18);
                 involveCount++;
-                throw new Error('mocked error 1');
+                return new PromiseClass((resolve, reject) => setTimeout(() => reject({message: 'mocked error 1'}), 5));
             })
             .then(() => {
                 assert.fail('unexpected here');
@@ -459,7 +461,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
             setTimeout(() => {
                 assert.equal(involveCount, 3);
                 done();
-            }, 30);
+            }, 40);
         });
 
         it('.catch.then', done => {
@@ -494,7 +496,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
                 assert.equal(data.name, 'xiaoming');
                 assert.equal(data.age, 18);
                 involveCount++;
-                return data;
+                return new PromiseClass((resolve, reject) => setTimeout(() => resolve(data), 5));
             })
             .then(data => {
                 assert.equal(data.name, 'xiaoming');
@@ -519,7 +521,7 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
             setTimeout(() => {
                 assert.equal(involveCount, 4);
                 done();
-            }, 30);
+            }, 40);
         });
     });
 
