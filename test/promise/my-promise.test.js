@@ -655,3 +655,49 @@ describe(`${PromiseClass.name} Chain Tests`, () => {
         });
     });
 });
+
+xdescribe(`${PromiseClass.name} Execution Sequence Tests`, () => {
+    // This case always failed because MyPromise uses process.nextTick to call next callback in case of resolved promise
+    it('executing sequence', done => {
+        const result = [];
+        async function async1() {
+            console.log('2. async1 start');
+            result.push(2);
+            await async2();
+            console.log("6. async1 end");
+            result.push(6);
+        }
+        async function async2() {
+            console.log('3. async2');
+            result.push(3);
+        }
+        console.log('1. script start');
+        result.push(1);
+        setTimeout(function () {
+            console.log('8. settimeout');
+            result.push(8);
+        }, 0);
+        async1();
+        new PromiseClass(function (resolve) {
+            console.log("4. promise1");
+            result.push(4);
+            resolve();
+        }).then(function () {
+            console.log('7. promise2');
+            result.push(7);
+        });
+
+        console.log('5. script end');
+        result.push(5);
+
+        setTimeout(() => {
+            assert.equal(result.length, 8);
+            let idx = 1;
+            for (const i of result) {
+                assert.equal(idx, i);
+                idx++;
+            }
+            done();
+        }, 10);
+    });
+});
